@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <title>Podgląd Zabezpieczenia Biegu</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #map { position: absolute; left: 300px; top: 0; right: 0; bottom: 0; z-index: 1; }
+        #panel {
+            position: absolute; left: 0; top: 0; width: 300px; bottom: 0;
+            background: white; overflow-y: auto; padding: 15px;
+            border-right: 1px solid #ccc; box-sizing: border-box; z-index: 9999;
+        }
+        .pointItem {
+            border: 1px solid #ddd; margin-bottom: 8px; padding: 8px;
+            border-radius: 4px; cursor: pointer; background: #fafafa;
+        }
+        .pointItem:hover { background: #f0f0f0; }
+        .coords-text {
+            font-family: monospace; color: #555; background: #eee;
+            padding: 2px 4px; border-radius: 3px; font-size: 11px;
+            display: inline-block; margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="panel">
+    <h2>Zabezpieczenie Biegu</h2>
+    <p style="font-size: 13px; color: #666;">Tryb tylko do odczytu. Kliknij punkt na liście, aby go zlokalizować.</p>
+    <hr>
+    <h3>Lista Punktów</h3>
+    <div id="pointList">Ładowanie punktów...</div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
+
+<script>
+    const map = L.map('map').setView([50.2649, 19.0238], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    let points = [];
+
+    // 1. AUTOMATYCZNE ŁADOWANIE TRASY GPX Z SERWERA
+    fetch('trasa.gpx')
+        .then(response => {
+            if (!response.ok) throw new Error('Brak pliku trasa.gpx');
+            return response.text();
+        })
+        .then(str => {
+            const parser = new DOMParser();
+            const gpx = parser.parseFromString(str, "text/xml");
+            const geojson = toGeoJSON.gpx(gpx);
+            const route = L.geoJSON(geojson, {
+                style: { color: "red", weight: 5, opacity: 0.7 }
+            }).addTo(map);
+            map.fitBounds(route.getBounds());
+        })
+        .catch(err => console.log('Info: ', err.message));
+
+    // 2. AUTOMATYCZNE ŁADOWANIE PUNKTÓW Z PLIKU JSON Z SERWERA
+    fetch('punkty.json')
+        .then(response => {
+            if (!response.ok) throw new Error('Brak pliku punkty.json');
+            return response.json();
+        })
+        .then(data => {
+            points = data.map((p, index) => {
+                let color = "blue";
+                if (p.typ === "Ochrona") color = "red";
+                if (p.typ === "Medyczny") color = "green";
+                if (p.typ === "Płoty") color = "black";
+
+                const marker = L.circleMarker([p.lat, p.lng], {
+                    radius: 9, color: color, fillColor: color, fillOpacity: 0.8, weight: 2
+                }).addTo(map);
+
+                const latFixed = p.lat.toFixed(5);
+                const lngFixed = p.lng.toFixed(5);
+
+                marker.bindPopup(`
+                    <div style="min-width: 140px;">
+                        <b>${p.typ}</b> (Nr: ${p.numer})<br>
+                        <span>${p.uwagi || 'Brak uwag'}</span><br>
+                        <span class="coords-text">📍 ${latFixed}, ${lngFixed}</span>
+                    </div>
+                `);
+
+                return { ...p, id: index, marker: marker };
+            });
+            refreshList();
+        })
+        .catch(err => {
+            document.getElementById("pointList").innerHTML = "<span style='color:red;'>Nie znaleziono zapisanych punktów.</span>";
+        });
+
+    function refreshList() {
+        let html = "";
+        if(points.length === 0) {
+            document.getElementById("pointList").innerHTML = "Brak punktów.";
+            return;
+        }
+        points.forEach(function(p) {
+            const latFixed = p.lat.toFixed(5);
+            const lngFixed = p.lng.toFixed(5);
+            html += `
+            <div class="pointItem" onclick="focusPoint(${p.id})">
+                <b>${p.typ}</b> (Nr: ${p.numer})<br>
+                <small style="color: #666; display:block; margin-bottom: 2px;">${p.uwagi || 'Brak uwag'}</small>
+                <span class="coords-text" style="font-size: 10px; padding: 1px 3px;">${latFixed}, ${lngFixed}</span>
+            </div>
+            `;
+        });
+        document.getElementById("pointList").innerHTML = html;
+    }
+
+    function focusPoint(id) {
+        const point = points.find(p => p.id === id);
+        if (point) {
+            map.setView([point.lat, point.lng], map.getZoom());
+            point.marker.openPopup();
+        }
+    }
+</script>
+</body>
+</html>
