@@ -2,18 +2,26 @@
 <html lang="pl">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Podgląd Zabezpieczenia Biegu</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <style>
         body { margin: 0; font-family: Arial, sans-serif; }
+        
+        /* DOMYŚLNY WIDOK (KOMPUTER / TABLET) */
         #map { position: absolute; left: 300px; top: 0; right: 0; bottom: 0; z-index: 1; }
         #panel {
             position: absolute; left: 0; top: 0; width: 300px; bottom: 0;
-            background: white; overflow-y: auto; padding: 15px;
+            background: white; 
+            overflow-y: auto; 
+            max-height: 100vh; /* Ograniczenie wysokości do ekranu komputera */
+            -webkit-overflow-scrolling: touch; /* Płynny scroll na urządzeniach Apple */
+            padding: 15px;
             border-right: 1px solid #ccc; box-sizing: border-box; z-index: 9999;
         }
+        
         .pointItem {
             border: 1px solid #ddd; margin-bottom: 8px; padding: 8px;
             border-radius: 4px; cursor: pointer; background: #fafafa;
@@ -23,6 +31,24 @@
             font-family: monospace; color: #555; background: #eee;
             padding: 2px 4px; border-radius: 3px; font-size: 11px;
             display: inline-block; margin-top: 4px;
+        }
+
+        /* WIDOK DLA TELEFONÓW (Ekran poniżej 768px szerokości) */
+        @media (max-width: 767px) {
+            #panel {
+                position: relative; /* Zmiana z poziomego na pionowy układ */
+                width: 100%;
+                height: 35vh; /* Panel zajmuje dokładnie 35% wysokości ekranu */
+                border-right: none;
+                border-bottom: 2px solid #ccc;
+            }
+            #map {
+                position: absolute;
+                left: 0;
+                top: 35vh; /* Mapa zaczyna się zaraz pod panelem */
+                right: 0;
+                bottom: 0;
+            }
         }
     </style>
 </head>
@@ -131,13 +157,13 @@
         }
     }
 
-    // Pomocnicza funkcja zwracająca odpowiedni promień (w px) dla danego poziomu przybliżenia
+    // Pomocnicza funkcja zwracająca odpowiedni promień punktu (w px) dla danego poziomu przybliżenia
     function getRadiusForZoom(zoom) {
         if (zoom <= 11) return 3;
         if (zoom === 12) return 5;
         if (zoom === 13) return 8;
         if (zoom === 14) return 10;
-        return 13; // dla zoom >= 15 (duże przybliżenie)
+        return 13; // dla zoom >= 15 (bardzo blisko)
     }
 
     // REAGOWANIE NA ZMIANĘ SKALI (ZOOM) – Zmiana wielkości punktów na żywo
