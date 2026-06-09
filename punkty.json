@@ -1,0 +1,65 @@
+[
+  {
+    "typ": "Wolontariusz",
+    "numer": "W3",
+    "uwagi": "Mapa 3",
+    "lat": 50.284485827939555,
+    "lng": 18.982009291648865
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W2",
+    "uwagi": "Mapa 2",
+    "lat": 50.2855724075488,
+    "lng": 18.980276584625248
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W1",
+    "uwagi": "Mapa 2",
+    "lat": 50.28569580303365,
+    "lng": 18.980021774768833
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W4",
+    "uwagi": "Mapa 4",
+    "lat": 50.28238286602426,
+    "lng": 18.98641884326935
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W5",
+    "uwagi": "Mapa 5",
+    "lat": 50.280279811191654,
+    "lng": 18.989785015583042
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W8",
+    "uwagi": "Mapa 7",
+    "lat": 50.2755180283069,
+    "lng": 18.99749100208283
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W9",
+    "uwagi": "Mapa 7",
+    "lat": 50.2758060114296,
+    "lng": 18.997987210750583
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W6",
+    "uwagi": "Mapa 6",
+    "lat": 50.27814752382143,
+    "lng": 18.993172645568848
+  },
+  {
+    "typ": "Wolontariusz",
+    "numer": "W7",
+    "uwagi": "Mapa 6",
+    "lat": 50.27850405440455,
+    "lng": 18.99371981620789
+  }
+]
