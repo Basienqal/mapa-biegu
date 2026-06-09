@@ -164,6 +164,27 @@
             point.marker.openPopup();
         }
     }
+    
+map.on('zoomend', function() {
+    const currentZoom = map.getZoom();
+    
+    // Ustalamy bazowy rozmiar. Np. przy zoomie 13 rozmiar to 9px.
+    // Im mniejszy zoom (oddalenie), tym mniejszy promień.
+    let newRadius = 9; 
+    if (currentZoom <= 10) newRadius = 3;
+    else if (currentZoom === 11) newRadius = 5;
+    else if (currentZoom === 12) newRadius = 7;
+    else if (currentZoom >= 14) newRadius = 12; // przy zbliżeniu mogą być większe
+
+    // Przechodzimy przez wszystkie załadowane punkty i zmieniamy im promień
+    points.forEach(function(p) {
+        if (p.marker && typeof p.marker.setRadius === 'function') {
+            p.marker.setRadius(newRadius);
+        }
+    });
+});
+
+    
 </script>
 </body>
 </html>
