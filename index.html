@@ -2,66 +2,27 @@
 <html lang="pl">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Podgląd Zabezpieczenia Biegu</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <style>
-        body { 
-            margin: 0; 
-            font-family: Arial, sans-serif; 
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-        }
-        
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #map { position: absolute; left: 300px; top: 0; right: 0; bottom: 0; z-index: 1; }
         #panel {
-            width: 300px;
-            height: 100%;
-            background: white; 
-            overflow-y: auto; 
-            padding: 15px;
-            border-right: 1px solid #ccc; 
-            box-sizing: border-box; 
-            z-index: 9999;
-            flex-shrink: 0;
+            position: absolute; left: 0; top: 0; width: 300px; bottom: 0;
+            background: white; overflow-y: auto; padding: 15px;
+            border-right: 1px solid #ccc; box-sizing: border-box; z-index: 9999;
         }
-        
-        #map { 
-            flex-grow: 1;
-            height: 100%;
-            z-index: 1; 
-        }
-
         .pointItem {
             border: 1px solid #ddd; margin-bottom: 8px; padding: 8px;
             border-radius: 4px; cursor: pointer; background: #fafafa;
         }
         .pointItem:hover { background: #f0f0f0; }
-        
         .coords-text {
             font-family: monospace; color: #555; background: #eee;
             padding: 2px 4px; border-radius: 3px; font-size: 11px;
             display: inline-block; margin-top: 4px;
-        }
-
-        @media (max-width: 767px) {
-            body {
-                flex-direction: column-reverse;
-            }
-            #panel {
-                width: 100%;
-                height: 40vh;
-                border-right: none;
-                border-top: 1px solid #ccc;
-            }
-            #map {
-                width: 100%;
-                height: 60vh;
-            }
         }
     </style>
 </head>
@@ -69,7 +30,7 @@
 
 <div id="panel">
     <h2>Zabezpieczenie Biegu</h2>
-    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Kliknij punkt na liście, aby go zlokalizować.</p>
+    <p style="font-size: 13px; color: #666;">Tryb tylko do odczytu. Kliknij punkt na liście, aby go zlokalizować.</p>
     <hr>
     <h3>Lista Punktów</h3>
     <div id="pointList">Ładowanie punktów...</div>
@@ -86,7 +47,8 @@
 
     let points = [];
 
-    fetch('trasa.gpx')
+    // 1. AUTOMATYCZNE ŁADOWANIE TRASY GPX Z SERWERA (Z zabezpieczeniem przed cache)
+    fetch('trasa.gpx?t=' + new Date().getTime())
         .then(response => {
             if (!response.ok) throw new Error('Brak pliku trasa.gpx');
             return response.text();
@@ -102,7 +64,8 @@
         })
         .catch(err => console.log('Info: ', err.message));
 
-    fetch('punkty.json')
+    // 2. AUTOMATYCZNE ŁADOWANIE PUNKTÓW Z PLIKU JSON Z SERWERA (Z zabezpieczeniem przed cache)
+    fetch('punkty.json?t=' + new Date().getTime())
         .then(response => {
             if (!response.ok) throw new Error('Brak pliku punkty.json');
             return response.json();
@@ -114,8 +77,11 @@
                 if (p.typ === "Medyczny") color = "green";
                 if (p.typ === "Płoty") color = "black";
 
+                // Obliczamy początkowy rozmiar na podstawie aktualnego zoomu mapy
+                const initialRadius = getRadiusForZoom(map.getZoom());
+
                 const marker = L.circleMarker([p.lat, p.lng], {
-                    radius: 9, color: color, fillColor: color, fillOpacity: 0.8, weight: 2
+                    radius: initialRadius, color: color, fillColor: color, fillOpacity: 0.8, weight: 2
                 }).addTo(map);
 
                 const latFixed = p.lat.toFixed(5);
@@ -164,27 +130,27 @@
             point.marker.openPopup();
         }
     }
-    
-map.on('zoomend', function() {
-    const currentZoom = map.getZoom();
-    
-    // Ustalamy bazowy rozmiar. Np. przy zoomie 13 rozmiar to 9px.
-    // Im mniejszy zoom (oddalenie), tym mniejszy promień.
-    let newRadius = 9; 
-    if (currentZoom <= 10) newRadius = 3;
-    else if (currentZoom === 11) newRadius = 5;
-    else if (currentZoom === 12) newRadius = 7;
-    else if (currentZoom >= 14) newRadius = 12; // przy zbliżeniu mogą być większe
 
-    // Przechodzimy przez wszystkie załadowane punkty i zmieniamy im promień
-    points.forEach(function(p) {
-        if (p.marker && typeof p.marker.setRadius === 'function') {
-            p.marker.setRadius(newRadius);
-        }
+    // Pomocnicza funkcja zwracająca odpowiedni promień (w px) dla danego poziomu przybliżenia
+    function getRadiusForZoom(zoom) {
+        if (zoom <= 11) return 3;
+        if (zoom === 12) return 5;
+        if (zoom === 13) return 8;
+        if (zoom === 14) return 10;
+        return 13; // dla zoom >= 15 (duże przybliżenie)
+    }
+
+    // REAGOWANIE NA ZMIANĘ SKALI (ZOOM) – Zmiana wielkości punktów na żywo
+    map.on('zoomend', function() {
+        const currentZoom = map.getZoom();
+        const newRadius = getRadiusForZoom(currentZoom);
+
+        points.forEach(function(p) {
+            if (p.marker && typeof p.marker.setRadius === 'function') {
+                p.marker.setRadius(newRadius);
+            }
+        });
     });
-});
-
-    
 </script>
 </body>
 </html>
